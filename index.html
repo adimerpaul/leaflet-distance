@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Mobile tutorial - Leaflet</title>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.4.1/cerulean/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+    <script src="js/L.Polyline.measuredDistance.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #map {
+            width: 600px;
+            height: 400px;
+        }
+        #refreshButton {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            /*padding: 10px;*/
+            z-index: 400;
+        }
+        #datos {
+            position: absolute;
+            top: 40px;
+            right: 0px;
+            /*padding: 10px;*/
+            z-index: 400;
+            text-align: right;
+        }
+    </style>
+
+    <style>body { padding: 0; margin: 0; } #map { height: 100%; width: 100vw; }</style>
+</head>
+<body>
+<body>
+<div id="map"></div>
+<button id="refreshButton" class="btn btn-primary">Reiniciar</button>
+<div id="datos">
+    <label for="">Velocidad (km/h)</label><input style="width: 50px" type="text" id="velocidad" value="5"><br>
+    <label for="">Distancia (km)</label><input style="width: 50px" type="text" id="distancia"  value="0" disabled><br>
+    <label for="">Tiempo (h)</label><input style="width: 75px" type="text" id="tiempo" value="0" disabled> <br>
+</div>
+
+<script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+<!--<div id='map'></div>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+<script>
+    $('#refreshButton').click(function (e) {
+        e.preventDefault();
+        var distancia;
+        var tiempo;
+        // console.log('1');
+        latlngs =[];
+        deleteLines()
+        // for(i in map._layers) {
+        //     console.log(map._layers[i]);
+        //     // if(map._layers[i]._path != undefined) {
+        //     //     try {
+        //     //         map.removeLayer(map._layers[i]);
+        //     //     }
+        //     //     catch(e) {
+        //     //         console.log("problem with " + e + map._layers[i]);
+        //     //     }
+        //     // }
+        // }
+    });
+    var map = L.map('map').setView([-17.992285, -67.135091], 16);
+    // var map = L.map('map').fitWorld();
+    function addMarker(e){
+// Add marker to map at click location; add popup window
+        var newMarker = new L.marker(e.latlng).addTo(map);
+    }
+    L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+        maxZoom: 18,
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        id: 'mapbox/streets-v11',
+        tileSize: 512,
+        zoomOffset: -1,
+        accessToken: 'pk.eyJ1IjoiYWRpbWVyIiwiYSI6ImNrN3c1aWwzbTAwc2czbGxwd3JybXNmNnIifQ.IahW77oZa7y_dHVQZqrkcg'
+    }).addTo(map);
+
+    // function onLocationFound(e) {
+    //     var radius = e.accuracy / 2;
+    //
+    //     L.marker(e.latlng).addTo(map)
+    //         .bindPopup("You are within " + radius + " meters from this point").openPopup();
+    //
+    //     L.circle(e.latlng, radius).addTo(map);
+    // }
+    //
+    // function onLocationError(e) {
+    //     alert(e.message);
+    // }
+    //
+    // map.on('locationfound', onLocationFound);
+    // map.on('locationerror', onLocationError);
+
+    // map.locate({setView: true, maxZoom: 25});
+    var cont=0;
+    var lat1,lng1,lat2,lng2;
+    function onMapClick(e) {
+        // alert("You clicked the map at " + e.latlng);
+        // var newMarker = new L.marker(e.latlng).addTo(map);
+        // var marker = L.marker([51.5, -0.09]).addTo(mymap);
+        // console.log(e.latlng.lat);
+        // L.marker(e.latlng).addTo(map).bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
+        // cont++;
+        //
+        // if (cont%2==0 && cont!=0){
+        //     lat2=e.latlng.lat;
+        //     lng2=e.latlng.lng;
+        //     var distance = getDistance([lat1, lng1], [lat2, lng2])
+        //     console.log(distance);
+        // }else{
+        //     // [lat1, lng1], [lat2, lng2];
+        //     lat1=e.latlng.lat;
+        //     lng1=e.latlng.lng;
+        // }
+
+
+        latlngs.push([e.latlng.lat,e.latlng.lng]);
+        var distanciatotal=0;
+        deleteLines();
+        // console.log(latlngs.length);
+        // latlngs.forEach(e=>{
+        //     // console.log(e);
+        //     if (latlngs.length>1){
+        //         // console.log(e);
+        //         // var distance = getDistance([-17.987616, -67.13427], [-17.987688, -67.134318])
+        //         lat2=e[0];
+        //         lng2=e[1];
+        //         var distance = getDistance([lat1, lng1], [lat2, lng2]);
+        //         lat1=lat2;
+        //         lng1=lng2;
+        //         // console.log(distance);
+        //         distanciatotal=distanciatotal+distance;
+        //         console.log(distanciatotal);
+        //     }else{
+        //         lat1=e[0];
+        //         lng1=e[1];
+        //     }
+        // })
+        var polyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
+        dist=polyline.measuredDistance().split(' ');
+        // console.log(dist)
+        if (dist[1]=="m"){
+            distacia= parseFloat( dist[0])/1000;
+        }else {
+            distacia=parseFloat(dist[0]);
+        }
+        $('#distancia').val(distacia);
+        velocidad=parseFloat($('#velocidad').val());
+        tiempo=(distacia)/(velocidad);
+        // tiempo=1.5;
+        tiempo=tiempo*60*60;
+        // $('#tiempo').val(tiempo.toFixed(2));
+        console.log(new Date(tiempo * 1000).toISOString().substr(11, 8));
+        $('#tiempo').val(new Date(tiempo * 1000).toISOString().substr(11, 8));
+        // console.log(distacia);
+    }
+    function deleteLines(){
+        for(i in map._layers) {
+            if(map._layers[i]._path != undefined) {
+                try {
+                    map.removeLayer(map._layers[i]);
+                }
+                catch(e) {
+                    console.log("problem with " + e + map._layers[i]);
+                }
+            }
+        }
+    }
+
+    map.on('click', onMapClick);
+
+
+
+    function getDistance(origin, destination) {
+        // return distance in meters
+        var lon1 = toRadian(origin[1]),
+            lat1 = toRadian(origin[0]),
+            lon2 = toRadian(destination[1]),
+            lat2 = toRadian(destination[0]);
+        var deltaLat = lat2 - lat1;
+        var deltaLon = lon2 - lon1;
+
+        var a = Math.pow(Math.sin(deltaLat/2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(deltaLon/2), 2);
+        var c = 2 * Math.asin(Math.sqrt(a));
+        var EARTH_RADIUS = 6371;
+        return c * EARTH_RADIUS * 1000;
+    }
+    function toRadian(degree) {
+        return degree*Math.PI/180;
+    }
+    // var distance = getDistance([-17.987616, -67.13427], [-17.987688, -67.134318])
+    // console.log(distance);
+    var latlngs =[];
+    // [
+    //     [-17.987616, -67.13427],
+    //     [-17.987688, -67.134318],
+    //     [-17.987700, -67.134400]
+    // ];
+
+    // var polyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
+    // console.log(moment().format('H:mm:ss'));
+    // console.log(new Date(45000000000 * 1000).toISOString().substr(11, 8));
+    // zoom the map to the polyline
+    // map.fitBounds(polyline.getBounds());
+</script>
+
+
+
+</body>
+</html>
